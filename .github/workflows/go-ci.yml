@@ -1,0 +1,65 @@
+name: Go CI
+
+on:
+  workflow_call:
+    inputs:
+      go-version:
+        description: 'Go version to use'
+        required: false
+        type: string
+        default: '1.23'
+      run-lint:
+        description: 'Run golangci-lint'
+        required: false
+        type: boolean
+        default: true
+      run-tests:
+        description: 'Run tests'
+        required: false
+        type: boolean
+        default: true
+      run-build:
+        description: 'Run build'
+        required: false
+        type: boolean
+        default: true
+      build-output:
+        description: 'Build output path'
+        required: false
+        type: string
+        default: './bin/app'
+      main-path:
+        description: 'Path to main.go'
+        required: false
+        type: string
+        default: './cmd/server'
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ inputs.go-version }}
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Lint
+        if: inputs.run-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+
+      - name: Test
+        if: inputs.run-tests
+        run: go test -v -race -coverprofile=coverage.out ./...
+
+      - name: Build
+        if: inputs.run-build
+        run: go build -o ${{ inputs.build-output }} ${{ inputs.main-path }}
