@@ -1,0 +1,68 @@
+name: 'Node.js Setup'
+description: 'Setup Node.js, package manager, install dependencies and optionally build'
+
+inputs:
+  node-version:
+    description: 'Node.js version'
+    required: false
+    default: '20'
+  package-manager:
+    description: 'Package manager (npm, pnpm, bun)'
+    required: false
+    default: 'npm'
+  install:
+    description: 'Run install step'
+    required: false
+    default: 'true'
+  build:
+    description: 'Run build step'
+    required: false
+    default: 'false'
+  build-command:
+    description: 'Build command'
+    required: false
+    default: 'npm run build'
+  registry-url:
+    description: 'NPM registry URL (for publishing)'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup pnpm
+      if: inputs.package-manager == 'pnpm'
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9
+
+    - name: Setup Bun
+      if: inputs.package-manager == 'bun'
+      uses: oven-sh/setup-bun@v1
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        registry-url: ${{ inputs.registry-url }}
+        cache: ${{ inputs.package-manager != 'bun' && inputs.package-manager || '' }}
+
+    - name: Install dependencies (npm)
+      if: inputs.install == 'true' && inputs.package-manager == 'npm'
+      shell: bash
+      run: npm ci
+
+    - name: Install dependencies (pnpm)
+      if: inputs.install == 'true' && inputs.package-manager == 'pnpm'
+      shell: bash
+      run: pnpm install --frozen-lockfile
+
+    - name: Install dependencies (bun)
+      if: inputs.install == 'true' && inputs.package-manager == 'bun'
+      shell: bash
+      run: bun install --frozen-lockfile
+
+    - name: Build
+      if: inputs.build == 'true'
+      shell: bash
+      run: ${{ inputs.build-command }}

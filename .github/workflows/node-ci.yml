@@ -61,33 +61,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        if: inputs.package-manager == 'pnpm'
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - name: Setup Bun
-        if: inputs.package-manager == 'bun'
-        uses: oven-sh/setup-bun@v1
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js environment
+        uses: jarero321/shared-workflows/.github/actions/node-setup@main
         with:
           node-version: ${{ inputs.node-version }}
-          cache: ${{ inputs.package-manager != 'bun' && inputs.package-manager || '' }}
-
-      - name: Install dependencies (npm)
-        if: inputs.package-manager == 'npm'
-        run: npm ci
-
-      - name: Install dependencies (pnpm)
-        if: inputs.package-manager == 'pnpm'
-        run: pnpm install --frozen-lockfile
-
-      - name: Install dependencies (bun)
-        if: inputs.package-manager == 'bun'
-        run: bun install --frozen-lockfile
+          package-manager: ${{ inputs.package-manager }}
+          build: ${{ inputs.run-build }}
+          build-command: ${{ inputs.build-command }}
 
       - name: Lint
         if: inputs.run-lint
@@ -100,7 +80,3 @@ jobs:
       - name: Test
         if: inputs.run-tests
         run: ${{ inputs.test-command }}
-
-      - name: Build
-        if: inputs.run-build
-        run: ${{ inputs.build-command }}

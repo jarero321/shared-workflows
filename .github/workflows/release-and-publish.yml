@@ -62,38 +62,15 @@ jobs:
           name: v${{ steps.version.outputs.version }}
           generate_release_notes: true
 
-      - name: Setup pnpm
-        if: steps.check.outputs.exists == 'false' && inputs.package-manager == 'pnpm'
-        uses: pnpm/action-setup@v2
-        with:
-          version: 9
-
-      - name: Setup Bun
-        if: steps.check.outputs.exists == 'false' && inputs.package-manager == 'bun'
-        uses: oven-sh/setup-bun@v1
-
-      - name: Setup Node.js
+      - name: Setup Node.js environment
         if: steps.check.outputs.exists == 'false'
-        uses: actions/setup-node@v4
+        uses: jarero321/shared-workflows/.github/actions/node-setup@main
         with:
           node-version: ${{ inputs.node-version }}
+          package-manager: ${{ inputs.package-manager }}
+          build: 'true'
+          build-command: ${{ inputs.build-command }}
           registry-url: 'https://registry.npmjs.org'
-
-      - name: Install dependencies (npm)
-        if: steps.check.outputs.exists == 'false' && inputs.package-manager == 'npm'
-        run: npm ci
-
-      - name: Install dependencies (pnpm)
-        if: steps.check.outputs.exists == 'false' && inputs.package-manager == 'pnpm'
-        run: pnpm install --frozen-lockfile
-
-      - name: Install dependencies (bun)
-        if: steps.check.outputs.exists == 'false' && inputs.package-manager == 'bun'
-        run: bun install --frozen-lockfile
-
-      - name: Build
-        if: steps.check.outputs.exists == 'false'
-        run: ${{ inputs.build-command }}
 
       - name: Publish to npm
         if: steps.check.outputs.exists == 'false'
