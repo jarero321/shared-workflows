@@ -1,0 +1,106 @@
+name: Node.js CI
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: 'Node.js version to use'
+        required: false
+        type: string
+        default: '20'
+      package-manager:
+        description: 'Package manager (npm, pnpm, bun)'
+        required: false
+        type: string
+        default: 'npm'
+      run-lint:
+        description: 'Run lint step'
+        required: false
+        type: boolean
+        default: true
+      run-typecheck:
+        description: 'Run type check step'
+        required: false
+        type: boolean
+        default: true
+      run-tests:
+        description: 'Run tests step'
+        required: false
+        type: boolean
+        default: true
+      run-build:
+        description: 'Run build step'
+        required: false
+        type: boolean
+        default: true
+      lint-command:
+        description: 'Lint command'
+        required: false
+        type: string
+        default: 'npm run lint'
+      typecheck-command:
+        description: 'Type check command'
+        required: false
+        type: string
+        default: 'npm run typecheck'
+      test-command:
+        description: 'Test command'
+        required: false
+        type: string
+        default: 'npm run test:run'
+      build-command:
+        description: 'Build command'
+        required: false
+        type: string
+        default: 'npm run build'
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Bun
+        if: inputs.package-manager == 'bun'
+        uses: oven-sh/setup-bun@v1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: ${{ inputs.package-manager == 'bun' && 'npm' || inputs.package-manager }}
+
+      - name: Install dependencies (npm)
+        if: inputs.package-manager == 'npm'
+        run: npm ci
+
+      - name: Install dependencies (pnpm)
+        if: inputs.package-manager == 'pnpm'
+        run: pnpm install --frozen-lockfile
+
+      - name: Install dependencies (bun)
+        if: inputs.package-manager == 'bun'
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        if: inputs.run-lint
+        run: ${{ inputs.lint-command }}
+
+      - name: Type check
+        if: inputs.run-typecheck
+        run: ${{ inputs.typecheck-command }}
+
+      - name: Test
+        if: inputs.run-tests
+        run: ${{ inputs.test-command }}
+
+      - name: Build
+        if: inputs.run-build
+        run: ${{ inputs.build-command }}

@@ -1,0 +1,67 @@
+name: NPM Publish
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: 'Node.js version to use'
+        required: false
+        type: string
+        default: '20'
+      build-command:
+        description: 'Build command to run'
+        required: false
+        type: string
+        default: 'npm run build'
+      package-manager:
+        description: 'Package manager (npm, pnpm, bun)'
+        required: false
+        type: string
+        default: 'npm'
+    secrets:
+      NPM_TOKEN:
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Bun
+        if: inputs.package-manager == 'bun'
+        uses: oven-sh/setup-bun@v1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          registry-url: 'https://registry.npmjs.org'
+          cache: ${{ inputs.package-manager == 'bun' && 'npm' || inputs.package-manager }}
+
+      - name: Install dependencies (npm)
+        if: inputs.package-manager == 'npm'
+        run: npm ci
+
+      - name: Install dependencies (pnpm)
+        if: inputs.package-manager == 'pnpm'
+        run: pnpm install --frozen-lockfile
+
+      - name: Install dependencies (bun)
+        if: inputs.package-manager == 'bun'
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: ${{ inputs.build-command }}
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
