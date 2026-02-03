@@ -55,7 +55,7 @@ on:
         default: 'npm run build'
 
 jobs:
-  ci:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
