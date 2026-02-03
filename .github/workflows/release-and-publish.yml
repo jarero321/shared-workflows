@@ -1,0 +1,102 @@
+name: Release and Publish
+
+on:
+  workflow_call:
+    inputs:
+      package-path:
+        description: 'Path to package.json'
+        required: false
+        type: string
+        default: 'package.json'
+      node-version:
+        description: 'Node.js version to use'
+        required: false
+        type: string
+        default: '20'
+      build-command:
+        description: 'Build command to run'
+        required: false
+        type: string
+        default: 'npm run build'
+      package-manager:
+        description: 'Package manager (npm, pnpm, bun)'
+        required: false
+        type: string
+        default: 'npm'
+    secrets:
+      NPM_TOKEN:
+        required: true
+
+jobs:
+  release-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get version from package.json
+        id: version
+        run: |
+          VERSION=$(jq -r '.version' ${{ inputs.package-path }})
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if tag exists
+        id: check
+        run: |
+          if git rev-parse "v${{ steps.version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Release
+        if: steps.check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+
+      - name: Setup pnpm
+        if: steps.check.outputs.exists == 'false' && inputs.package-manager == 'pnpm'
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Setup Bun
+        if: steps.check.outputs.exists == 'false' && inputs.package-manager == 'bun'
+        uses: oven-sh/setup-bun@v1
+
+      - name: Setup Node.js
+        if: steps.check.outputs.exists == 'false'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies (npm)
+        if: steps.check.outputs.exists == 'false' && inputs.package-manager == 'npm'
+        run: npm ci
+
+      - name: Install dependencies (pnpm)
+        if: steps.check.outputs.exists == 'false' && inputs.package-manager == 'pnpm'
+        run: pnpm install --frozen-lockfile
+
+      - name: Install dependencies (bun)
+        if: steps.check.outputs.exists == 'false' && inputs.package-manager == 'bun'
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        if: steps.check.outputs.exists == 'false'
+        run: ${{ inputs.build-command }}
+
+      - name: Publish to npm
+        if: steps.check.outputs.exists == 'false'
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
