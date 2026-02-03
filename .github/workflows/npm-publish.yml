@@ -44,7 +44,7 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           registry-url: 'https://registry.npmjs.org'
-          cache: ${{ inputs.package-manager == 'bun' && 'npm' || inputs.package-manager }}
+          cache: ${{ inputs.package-manager != 'bun' && inputs.package-manager || '' }}
 
       - name: Install dependencies (npm)
         if: inputs.package-manager == 'npm'
