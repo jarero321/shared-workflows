@@ -1,6 +1,28 @@
-# Shared Workflows
+<div align="center">
 
-Reusable GitHub Actions workflows for CI/CD pipelines.
+```
+                    _     __ _
+__      _____  _ __| | __/ _| | _____      _____
+\ \ /\ / / _ \| '__| |/ / |_| |/ _ \ \ /\ / / __|
+ \ V  V / (_) | |  |   <|  _| | (_) \ V  V /\__ \
+  \_/\_/ \___/|_|  |_|\_\_| |_|\___/ \_/\_/ |___/
+```
+
+### I kept copying CI configs between repos. So I centralized them.
+
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?logo=github-actions&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?logo=node.js&logoColor=white)
+![Go](https://img.shields.io/badge/Go-00ADD8?logo=go&logoColor=white)
+
+[![License](https://img.shields.io/badge/license-MIT-brightgreen?style=flat-square)](LICENSE)
+
+**Reusable GitHub Actions workflows for CI/CD pipelines**
+
+[Node CI](#node-ciyml) · [Go CI](#go-ciyml) · [npm Publish](#npm-publishyml) · [Usage](#usage-example)
+
+</div>
+
+---
 
 ## Available Workflows
 
@@ -20,7 +42,6 @@ jobs:
       run-build: true
 ```
 
-**Inputs:**
 | Input | Default | Description |
 |-------|---------|-------------|
 | `node-version` | `'20'` | Node.js version |
@@ -33,6 +54,31 @@ jobs:
 | `typecheck-command` | `'npm run typecheck'` | Custom typecheck command |
 | `test-command` | `'npm run test:run'` | Custom test command |
 | `build-command` | `'npm run build'` | Custom build command |
+
+---
+
+### `go-ci.yml`
+
+CI workflow for Go projects.
+
+```yaml
+jobs:
+  ci:
+    uses: jarero321/shared-workflows/.github/workflows/go-ci.yml@main
+    with:
+      go-version: '1.23'
+      main-path: './cmd/server'
+      build-output: './bin/app'
+```
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `go-version` | `'1.23'` | Go version |
+| `run-lint` | `true` | Run golangci-lint |
+| `run-tests` | `true` | Run tests |
+| `run-build` | `true` | Run build |
+| `main-path` | `'./cmd/server'` | Path to main.go |
+| `build-output` | `'./bin/app'` | Build output path |
 
 ---
 
@@ -50,17 +96,17 @@ jobs:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
 
-**Inputs:**
 | Input | Default | Description |
 |-------|---------|-------------|
 | `node-version` | `'20'` | Node.js version |
 | `package-manager` | `'npm'` | npm, pnpm, or bun |
 | `build-command` | `'npm run build'` | Custom build command |
 
-**Secrets:**
 | Secret | Required | Description |
 |--------|----------|-------------|
 | `NPM_TOKEN` | Yes | npm authentication token |
+
+---
 
 ## Usage Example
 
@@ -99,3 +145,17 @@ jobs:
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 ```
+
+---
+
+## License
+
+MIT
+
+---
+
+<div align="center">
+
+**[Report Bug](https://github.com/jarero321/shared-workflows/issues)** · **[Request Feature](https://github.com/jarero321/shared-workflows/issues)**
+
+</div>
